@@ -1,0 +1,19 @@
+<!-- extend base layout -->
+{% extends "layout.html" %}
+{% block content %}
+<h1>Search results for "{{ query }}":</h1>
+    <ul>
+    {% for result in results %}
+    <div>
+        <li>
+            <a href="{{ url_for('meta_search.show', record_id=result.record_id) }}">
+                "{{ result.title }}"
+            </a>
+            <div>"{{ result.snippet }}"</div>
+        </li>
+    </div>
+  {% else %}
+    <li><em>Unbelievable. Nothing found</em>
+  {% endfor %}
+  </ul>
+{% endblock %}
