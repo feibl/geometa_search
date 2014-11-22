@@ -3,10 +3,45 @@
 {% block content %}
 <h1>Search results for "{{ query }}":</h1>
     <ul>
+    {% for query in sim_queries %}
+    <div>
+        <li>
+            <a href="{{ url_for('meta_search.search',
+               q=query, cid='freaks') }}">
+                "{{ query }} "
+            </a>
+        </li>
+    </div>
+    {% endfor %}
+    </ul>
+
+    <p>Recommended Items:</p>
+    <ul>
+    {% for result in recommendations %}
+    <div>
+        <li>
+            <a id="link_{{result.record_id}}"
+               href="{{ url_for('meta_search.show',
+               record_id=result.record_id,
+               q=query, qid=query_id, cid='freaks') }}">
+                "{{ result.title }}"
+            </a>
+            <div>"{{ result.snippet }}"</div>
+        </li>
+    </div>
+  {% else %}
+    <li><em>No recommendations</em>
+  {% endfor %}
+  </ul>
+
+    <ul>
     {% for result in results %}
     <div>
         <li>
-            <a href="{{ url_for('meta_search.show', record_id=result.record_id) }}">
+            <a id="link_{{result.record_id}}"
+               href="{{ url_for('meta_search.show',
+               record_id=result.record_id,
+               q=query, qid=query_id, cid='freaks') }}">
                 "{{ result.title }}"
             </a>
             <div>"{{ result.snippet }}"</div>
@@ -16,4 +51,5 @@
     <li><em>Unbelievable. Nothing found</em>
   {% endfor %}
   </ul>
+  <script type="text/javascript" src="/static/own_js/layout.js"></script>
 {% endblock %}

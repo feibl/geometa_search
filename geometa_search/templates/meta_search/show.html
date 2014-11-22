@@ -1,0 +1,7 @@
+<!-- extend base layout -->
+{% extends "layout.html" %}
+{% block content %}
+    <h3>"{{record.title}}"</h3>
+    <p>"Identifier: {{ record.record_id }}"</p>
+    <p>"Description: {{ record.description }}"</p>
+{% endblock %}

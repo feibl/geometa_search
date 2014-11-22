@@ -8,7 +8,7 @@ class Config(object):
     DEBUG = False
     TESTING = False
     SQLALCHEMY_DATABASE_URI =\
-        'postgresql://postgres:postgres@localhost/search_rex'
+        'postgresql://postgres:postgres@localhost/test_rex'
 
 
 class ProductionConfig(Config):
