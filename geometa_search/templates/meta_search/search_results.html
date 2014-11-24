@@ -20,13 +20,13 @@
     {% for result in recommendations %}
     <div>
         <li>
-            <a id="link_{{result.record_id}}"
+            <a id="link_{{result.identifier}}"
                href="{{ url_for('meta_search.show',
-               record_id=result.record_id,
+               record_id=result.identifier,
                q=query, qid=query_id, cid='freaks') }}">
-                "{{ result.title }}"
+                {{ result.title }}
             </a>
-            <div>"{{ result.snippet }}"</div>
+            <div>{{ result.snippet }}</div>
         </li>
     </div>
   {% else %}
@@ -38,13 +38,13 @@
     {% for result in results %}
     <div>
         <li>
-            <a id="link_{{result.record_id}}"
+            <a id="link_{{result.identifier}}"
                href="{{ url_for('meta_search.show',
-               record_id=result.record_id,
+               record_id=result.identifier,
                q=query, qid=query_id, cid='freaks') }}">
-                "{{ result.title }}"
+                {{ result.title }}
             </a>
-            <div>"{{ result.snippet }}"</div>
+            <div>{{ result.snippet }}</div>
         </li>
     </div>
   {% else %}

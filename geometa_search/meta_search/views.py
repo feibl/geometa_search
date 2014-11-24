@@ -1,7 +1,8 @@
+from ..services import searcher
+
 from flask import Blueprint
 from flask import render_template
 from flask import request
-from flask import jsonify
 from flask import abort
 from flask import session
 
@@ -16,58 +17,6 @@ meta_search = Blueprint('meta_search', __name__)
 
 
 rec_sys_address = 'http://localhost:5000/recommender/api'
-
-
-class Record(object):
-    def __init__(self, title, record_id, snippet):
-        self.title = title
-        self.record_id = record_id
-        self.snippet = snippet
-        self.description = snippet
-        self.text = '{} {}'.format(self.title, self.description)
-        self.text = self.text.lower()
-
-    def serialize(self):
-        return {
-            'title': self.title,
-            'record_id': self.record_id,
-            'snippet': self.snippet,
-            'description': self.snippet,
-        }
-
-
-records = [
-    Record(
-        'Ali Baba',
-        '1ab3',
-        "There's a restaurant with the same name"
-    ),
-    Record(
-        'Aladin',
-        '3g68',
-        'Aladin wears pants that look like a pyjama'
-    ),
-    Record(
-        'Faust',
-        '783g',
-        'This is why I hate poodles'
-    ),
-    Record(
-        'Ceasar',
-        '1ab3',
-        "Don't ever accept friendship of one called Brutus"
-    ),
-    Record(
-        'Barabossa',
-        'ga45',
-        'Man with beards. What can you say?'
-    ),
-    Record(
-        'Don Juan',
-        '13re',
-        'Don Juan will get your girl for sure'
-    ),
-]
 
 
 sessions = {}
@@ -111,8 +60,16 @@ def get_recommendations(query_string, community_id):
         record_ids = []
         for rec in r_json['results']:
             record_ids.append(rec['record_id'])
-        recs = filter(lambda r: r.record_id in record_ids, records)
-        print(recs)
+
+        if len(record_ids) > 0:
+            print('Recommendations: {}'.format(record_ids))
+            records = searcher.search_by_ids(record_ids)
+            for record_id in record_ids:
+                if record_id in records:
+                    recs.append(records[record_id])
+        else:
+            print('No recommendations'.format())
+
     except ValueError:
         print('No JSON object could be decoded')
 
@@ -186,16 +143,13 @@ def search():
         sessions[session['session_id']].update([query_id])
         print(sessions[session['session_id']])
 
-        query = query.lower()
-        matches = []
-        for record in records:
-            if record.text.find(query) != -1:
-                matches.append(record)
+        records, num_matches = searcher.search_by_keywords(query)
 
         return render_template(
             'meta_search/search_results.html', query=query,
-            query_id=query_id, results=matches,
-            sim_queries=sim_queries, recommendations=recs)
+            query_id=query_id, results=records,
+            sim_queries=sim_queries, recommendations=recs,
+            num_matches=num_matches)
 
     return render_template('layout.html')
 
@@ -217,10 +171,10 @@ def show():
             print('register hit')
             register_hit(query, community_id, session['session_id'], record_id)
 
-        matches = filter(lambda r: r.record_id == record_id, records)
-        if len(matches) > 0:
+        record = searcher.search_by_id(record_id)
+        if record:
             return render_template(
                 'meta_search/show.html', query=query,
-                record=matches[0])
+                record=record)
 
     abort(404)

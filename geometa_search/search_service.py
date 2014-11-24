@@ -1,7 +1,7 @@
 class Record(object):
 
     def __init__(self, csw_record):
-        self.csw_record = csw_record
+        self.__dict__ = csw_record.__dict__
         if csw_record.abstract is not None:
             self.snippet = csw_record.abstract[:200]
         else:
@@ -13,7 +13,7 @@ class SearchService(object):
     Declares functions used for searching records
     """
 
-    def search_by_keyword(
+    def search_by_keywords(
             self, query_string, start_position=0, max_records=10):
         """
         Searches records matching the given keywords.
