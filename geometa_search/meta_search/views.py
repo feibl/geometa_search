@@ -73,12 +73,18 @@ records = [
 sessions = {}
 
 
-@meta_search.route('/')
-def index():
-    '''
-    Start page with search form
-    '''
-    return render_template('layout.html')
+def create_session_id():
+    return uuid.UUID(bytes=M2Crypto.m2.rand_bytes(16))
+
+
+@meta_search.before_request
+def before_request():
+    if 'session_id' not in session:
+        session_id = create_session_id()
+        session['session_id'] = session_id
+        sessions[session_id] = set()
+    elif session['session_id'] not in sessions:
+        sessions[session['session_id']] = set()
 
 
 def generate_query_id(query):
@@ -155,6 +161,14 @@ def get_similar_queries(query_string, community_id):
     return sim_queries
 
 
+@meta_search.route('/')
+def index():
+    '''
+    Start page with search form
+    '''
+    return render_template('layout.html')
+
+
 @meta_search.route('/search')
 def search():
     '''
@@ -210,17 +224,3 @@ def show():
                 record=matches[0])
 
     abort(404)
-
-
-def create_session_id():
-    return uuid.UUID(bytes=M2Crypto.m2.rand_bytes(16))
-
-
-@meta_search.before_request
-def before_request():
-    if 'session_id' not in session:
-        session_id = create_session_id()
-        session['session_id'] = session_id
-        sessions[session_id] = set()
-    elif session['session_id'] not in sessions:
-        sessions[session['session_id']] = set()
