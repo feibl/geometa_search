@@ -1,22 +1,41 @@
+class Record(object):
+
+    def __init__(self, csw_record):
+        self.csw_record = csw_record
+        if csw_record.abstract is not None:
+            self.snippet = csw_record.abstract[:200]
+        else:
+            self.snippet = ''
+
+
 class SearchService(object):
     """
     Declares functions used for searching records
     """
 
-    def search_by_keyword(query_string, start_index=0, max_records=10):
+    def search_by_keyword(
+            self, query_string, start_position=0, max_records=10):
         """
         Searches records matching the given keywords.
 
         :param query_string: the query
-        :param start_index: starting index in the result list
+        :param start_position: starting index in the result list
         :param max_records: maximum numbers of records returned
         """
         raise NotImplementedError()
 
-    def search_by_id(record_id):
+    def search_by_ids(self, record_ids):
         """
-        Searches a record having the specified id
+        Searches records by ids
 
-        :param record_id: id of the record
+        :param record_ids: list of ids of the requested records
+        """
+        raise NotImplementedError()
+
+    def search_by_id(self, record_id):
+        """
+        Searches a single record having the specified id
+
+        :param record_id: id of the requested record
         """
         raise NotImplementedError()
