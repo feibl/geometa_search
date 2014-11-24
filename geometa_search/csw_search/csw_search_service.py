@@ -46,4 +46,6 @@ class CSWSearchService(SearchService):
         self.csw.getrecordbyid(
             id=[record_id], esn='full')
 
-        return Record(self.csw.records[record_id])
+        return Record(
+            self.csw.records[record_id] if record_id in
+            self.csw.records else None)
