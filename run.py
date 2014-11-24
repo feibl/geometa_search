@@ -1,4 +1,4 @@
-from geometa_search import create_app as create_frontend
+from geometa_search.factory import create_app as create_frontend
 from search_rex.factory import create_app as create_backend
 from werkzeug.wsgi import DispatcherMiddleware
 from werkzeug.serving import run_simple
