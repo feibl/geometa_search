@@ -7,6 +7,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config(object):
     DEBUG = False
     TESTING = False
+    SECRET_KEY = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 
 
 class ProductionConfig(Config):
