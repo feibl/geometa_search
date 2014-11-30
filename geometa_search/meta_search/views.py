@@ -12,6 +12,7 @@ import requests
 import uuid
 import M2Crypto
 from time import time
+from datetime import datetime
 
 from collections import OrderedDict
 
@@ -134,7 +135,7 @@ def register_hit(query_string, community_id, session_id, record_id):
         'record_id': record_id,
         'api_key': current_app.config['API_KEY'],
         'session_id': session_id,
-        'timestamp': int(time())
+        'timestamp': datetime.utcnow().isoformat()
     }
     print(int(time()))
     print(payload)
