@@ -12,6 +12,8 @@ import uuid
 import M2Crypto
 from time import time
 
+from collections import OrderedDict
+
 
 meta_search = Blueprint('meta_search', __name__)
 
@@ -20,6 +22,37 @@ rec_sys_address = 'http://localhost:5000/recommender/api'
 
 
 sessions = {}
+
+
+class SearchResult(object):
+
+    def __init__(self, record_id, title, abstract):
+        self.identifier = record_id
+        self.title = title
+        self.abstract = abstract
+        self.snippet = abstract[:100]
+        self.recommendation = None
+
+    def is_recommended(self):
+        return self.recommendation is not None
+
+
+class Recommendation(object):
+
+    def __init__(self, last_interaction, total_hits):
+        self.last_interaction = last_interaction
+        self.total_hits = total_hits
+
+
+def deserialize_recommendation(json_rec):
+    return Recommendation(
+        last_interaction=json_rec['last_interaction'],
+        total_hits=json_rec['total_hits'])
+
+
+def create_search_result(record):
+    return SearchResult(
+        record.identifier, record.title, record.abstract)
 
 
 def create_session_id():
@@ -40,44 +73,60 @@ def generate_query_id(query):
     return str(hash('{}{}{}'.format('salt', query, str(int(time())))))
 
 
-def get_recommendations(query_string, community_id):
-    recs = []
+def get_recommendations(query_string, community_id, num_promotions=3):
+    promoted_results = []
+    recommendations = OrderedDict()
 
     payload = {
         'query_string': query_string,
         'community_id': community_id,
         'api_key': str(1234),
     }
-    print(payload)
     r = requests.get(
         rec_sys_address + '/recommend',
         params=payload
     )
-    print(r.text)
 
     try:
         r_json = r.json()
-        record_ids = []
-        for rec in r_json['results']:
-            record_ids.append(rec['record_id'])
+        for json_rec in r_json['results']:
+            recommendations[json_rec['record_id']] =\
+                deserialize_recommendation(json_rec)
 
-        if len(record_ids) > 0:
-            print('Recommendations: {}'.format(record_ids))
-            records = searcher.search_by_ids(record_ids)
-            for record_id in record_ids:
-                if record_id in records:
-                    recs.append(records[record_id])
+        print('Num recommended records {}'.format(len(recommendations)))
+
+        promotions = []
+        promotion_ids = []
+        for i in range(min(num_promotions, len(recommendations))):
+            promoted_id, promotion = recommendations.popitem(last=False)
+            promotions.append(promotion)
+            promotion_ids.append(promoted_id)
+
+        print('Promotions {}'.format(promotion_ids))
+
+        if len(promotion_ids) > 0:
+            records = searcher.search_by_ids(promotion_ids)
+            print('Found promotions {}'.format(len(records)))
+            found_records = []
+            for p_id in promotion_ids:
+                if p_id in records:
+                    found_records.append(records[p_id])
+
+            for record in found_records:
+                promotion = promotions[promotion_ids.index(record.identifier)]
+                search_result = create_search_result(record)
+                search_result.recommendation = promotion
+                promoted_results.append(search_result)
         else:
             print('No recommendations'.format())
 
     except ValueError:
         print('No JSON object could be decoded')
 
-    return recs
+    return promoted_results, recommendations
 
 
 def register_hit(query_string, community_id, session_id, record_id):
-    # TODO: address as variable
     payload = {
         'query_string': query_string,
         'community_id': community_id,
@@ -95,7 +144,7 @@ def register_hit(query_string, community_id, session_id, record_id):
     print(r.text)
 
 
-def get_similar_queries(query_string, community_id):
+def get_similar_queries(query_string, community_id, max_results=3):
     payload = {
         'query_string': query_string,
         'community_id': community_id,
@@ -115,7 +164,7 @@ def get_similar_queries(query_string, community_id):
     except ValueError:
         print('No JSON object could be decoded')
 
-    return sim_queries
+    return sim_queries[:max_results]
 
 
 @meta_search.route('/')
@@ -137,7 +186,7 @@ def search():
 
     if query and community_id:
         sim_queries = get_similar_queries(query, community_id)
-        recs = get_recommendations(query, community_id)
+        promotions, remaining_recs = get_recommendations(query, community_id)
 
         query_id = generate_query_id(query)
         sessions[session['session_id']].update([query_id])
@@ -145,10 +194,21 @@ def search():
 
         records, num_matches = searcher.search_by_keywords(query)
 
+        results = promotions
+        promoted_ids = [p.identifier for p in promotions]
+        for record in records:
+            if record.identifier in promoted_ids:
+                continue
+            search_result = create_search_result(record)
+            if record.identifier in remaining_recs:
+                search_result.recommendation =\
+                    remaining_recs[record.identifier]
+            results.append(search_result)
+
         return render_template(
             'meta_search/search_results.html', query=query,
-            query_id=query_id, results=records,
-            sim_queries=sim_queries, recommendations=recs,
+            query_id=query_id, results=results,
+            sim_queries=sim_queries,
             num_matches=num_matches)
 
     return render_template('layout.html')
