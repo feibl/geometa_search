@@ -5,6 +5,7 @@ from flask import render_template
 from flask import request
 from flask import abort
 from flask import session
+from flask import current_app
 
 import requests
 
@@ -80,7 +81,7 @@ def get_recommendations(query_string, community_id, num_promotions=3):
     payload = {
         'query_string': query_string,
         'community_id': community_id,
-        'api_key': str(1234),
+        'api_key': current_app.config['API_KEY'],
     }
     r = requests.get(
         rec_sys_address + '/recommend',
@@ -131,7 +132,7 @@ def register_hit(query_string, community_id, session_id, record_id):
         'query_string': query_string,
         'community_id': community_id,
         'record_id': record_id,
-        'api_key': str(1234),
+        'api_key': current_app.config['API_KEY'],
         'session_id': session_id,
         'timestamp': int(time())
     }
@@ -148,7 +149,7 @@ def get_similar_queries(query_string, community_id, max_results=3):
     payload = {
         'query_string': query_string,
         'community_id': community_id,
-        'api_key': str(1234),
+        'api_key': current_app.config['API_KEY'],
     }
     print(payload)
     r = requests.get(
