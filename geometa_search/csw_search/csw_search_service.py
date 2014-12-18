@@ -44,14 +44,17 @@ class CSWSearchService(SearchService):
             search_results = {}
             for record_id, record in self.csw.records.iteritems():
                 search_results[record_id] = Record(record)
+                print('Record: {}'.format(record_id))
 
             return search_results
 
         except ExceptionReport:
             print('Get Records by ids could not be evaluated')
-            return {}
+
+        return {}
 
     def search_by_id(self, record_id):
         records = self.search_by_ids([record_id])
-        return Record(
-            records[record_id] if record_id in records else None)
+        if record_id in records:
+            return Record(records[record_id])
+        return None

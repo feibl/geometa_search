@@ -6,6 +6,7 @@ from flask import request
 from flask import abort
 from flask import session
 from flask import current_app
+from flask import jsonify
 
 import requests
 
@@ -75,17 +76,18 @@ def generate_query_id(query):
     return str(hash('{}{}{}'.format('salt', query, str(int(time())))))
 
 
-def get_recommendations(query_string, community_id, num_promotions=3):
+def get_recommendations(
+        query_string, include_internal_records, num_promotions=3):
     promoted_results = []
     recommendations = OrderedDict()
 
     payload = {
         'query_string': query_string,
-        'community_id': community_id,
+        'include_internal_records': include_internal_records,
         'api_key': current_app.config['API_KEY'],
     }
     r = requests.get(
-        rec_sys_address + '/recommend',
+        rec_sys_address + '/viewed_results_for_query',
         params=payload
     )
 
@@ -128,10 +130,10 @@ def get_recommendations(query_string, community_id, num_promotions=3):
     return promoted_results, recommendations
 
 
-def register_hit(query_string, community_id, session_id, record_id):
+def report_view(query_string, is_internal_record, session_id, record_id):
     payload = {
         'query_string': query_string,
-        'community_id': community_id,
+        'is_internal_record': is_internal_record,
         'record_id': record_id,
         'api_key': current_app.config['API_KEY'],
         'session_id': session_id,
@@ -146,10 +148,9 @@ def register_hit(query_string, community_id, session_id, record_id):
     print(r.text)
 
 
-def get_similar_queries(query_string, community_id, max_results=3):
+def get_similar_queries(query_string, max_results=3):
     payload = {
         'query_string': query_string,
-        'community_id': community_id,
         'api_key': current_app.config['API_KEY'],
     }
     print(payload)
@@ -184,11 +185,12 @@ def search():
     search-text to the client
     '''
     query = request.args['q']
-    community_id = request.args['cid']
+    internal_session = request.args['internal']
 
-    if query and community_id:
-        sim_queries = get_similar_queries(query, community_id)
-        promotions, remaining_recs = get_recommendations(query, community_id)
+    if query and internal_session:
+        sim_queries = get_similar_queries(query)
+        promotions, remaining_recs = get_recommendations(
+            query, internal_session)
 
         query_id = generate_query_id(query)
         sessions[session['session_id']].update([query_id])
@@ -222,21 +224,65 @@ def show():
     Shows the metadata with the given id
     '''
     record_id = request.args.get('record_id')
-    query = request.args['q']
-    community_id = request.args['cid']
-    query_id = request.args['qid']
-    print(query_id)
+    query = request.args.get('q')
+    query_id = request.args.get('qid')
+    print('Query Id: {}'.format(query_id))
+    print('Query: {}'.format(query))
 
-    if record_id and query and community_id and query_id:
-        print(sessions[session['session_id']])
-        if query_id in sessions[session['session_id']]:
-            print('register hit')
-            register_hit(query, community_id, session['session_id'], record_id)
-
+    if record_id:
         record = searcher.search_by_id(record_id)
-        if record:
+
+        if record is None:
+            abort(404)
+
+        if query is not None and query_id is not None:
+            print(sessions[session['session_id']])
+            if query_id in sessions[session['session_id']]:
+                print('register hit')
+                report_view(query, True, session['session_id'], record_id)
+
+                return render_template(
+                    'meta_search/show.html', query=query,
+                    record=record)
+        else:
             return render_template(
-                'meta_search/show.html', query=query,
-                record=record)
+                'meta_search/show.html', record=record)
 
     abort(404)
+
+
+@meta_search.route('/inspired_by_your_view_history')
+def inspired_by_your_view_history():
+    payload = {
+        'session_id': session['session_id'],
+        'api_key': current_app.config['API_KEY'],
+        'include_internal_records': True,
+    }
+    r = requests.get(
+        rec_sys_address + '/inspired_by_your_view_history',
+        params=payload
+    )
+    recommendations = []
+    try:
+        r_json = r.json()
+        recommended_records = []
+        for json_rec in r_json['results']:
+            recommended_records.append(json_rec['record_id'])
+
+        if len(recommended_records) > 0:
+            records = searcher.search_by_ids(recommended_records)
+
+            for record_id in recommended_records:
+                if record_id in records:
+                    record = records[record_id]
+                    recommendations.append({
+                        'identifier': record.identifier,
+                        'title': record.title,
+                    })
+        else:
+            print('No recommendations'.format())
+
+    except ValueError:
+        print('No JSON object could be decoded')
+
+    return jsonify(results=recommendations)

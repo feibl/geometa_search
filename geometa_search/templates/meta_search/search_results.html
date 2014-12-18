@@ -1,46 +1,18 @@
 <!-- extend base layout -->
 {% extends "layout.html" %}
 {% block content %}
-<h1>Search results for "{{ query }}":</h1>
+<h2>Search results for "{{ query }}":</h2>
     <ul>
     {% for query in sim_queries %}
     <div>
         <li>
-            <a href="{{ url_for('meta_search.search',
-               q=query, cid='freaks') }}">
+            <a href="{{ url_for('meta_search.search', q=query) }}">
                 "{{ query }} "
             </a>
         </li>
     </div>
     {% endfor %}
     </ul>
-
-    {#    
-    <p>Recommended Items:</p>
-    <ul>
-    {% for result in recommendations %}
-    <div>
-        <li>
-            <div>
-                <a id="link_{{result.identifier}}"
-                   href="{{ url_for('meta_search.show',
-                   record_id=result.identifier,
-                   q=query, qid=query_id, cid='freaks') }}">
-                    {{ result.title }}
-                </a>
-                <svg width="10" height="10">
-                    <circle cx="5" cy="5" r="4" stroke="green" stroke-width="4" fill="yellow" />
-                </svg>
-            </div>
-            <div>{{ result.snippet }}</div>
-
-        </li>
-    </div>
-  {% else %}
-    <li><em>No recommendations</em>
-  {% endfor %}
-    </ul>
-    #}
 
     <ul>
     {% for result in results %}
@@ -50,13 +22,10 @@
                 <a class="record-link" id="link_{{result.identifier}}"
                    href="{{ url_for('meta_search.show',
                    record_id=result.identifier,
-                   q=query, qid=query_id, cid='freaks') }}">
+                   q=query, qid=query_id) }}">
                     {{ result.title }}
                 </a>
                 {% if result.is_recommended() %}
-                {#<svg width="20" height="20">
-                    <circle cx="10" cy="10" r="9" stroke="green" stroke-width="4" fill="yellow" />
-                </svg>#}
                 <img
                     src="{{ url_for('static', filename='images/men24.svg') }}"
                     title="Recommended: {{ result.recommendation.total_hits }} Hits"

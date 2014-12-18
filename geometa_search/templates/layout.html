@@ -3,14 +3,59 @@
     <script type=text/javascript src="{{ url_for('static', filename='jquery.js') }}"></script>
 	<link rel="stylesheet" type='text/css' href="{{ url_for('static', filename='own_css/search.css') }}">
 </head>
-<body>
-    <form style="display: inline;" action="{{ url_for('meta_search.search') }}" method="GET">
-        <input type="text" name="q" value="{{ query }}">
-        <input type="submit" value="Search">
-        <select name='cid'>
-            <option value="freaks">Freaks</option>
-            <option value="geeks">Geeks</option>
-        </select>
-    </form>
-    <div id="content">{% block content %}{% endblock %}</div>
+<body onload="getRecommendations()">
+    <header>
+        <h1>Geometa Search</h1>
+        <div class="search_bar">
+            <form style="display: inline;" action="{{ url_for('meta_search.search') }}" method="GET">
+                <input type="text" name="q" value="{{ query }}">
+                <input type="submit" value="Search">
+                <select name='internal'>
+                    <option value="true">Internal</option>
+                    <option value="false">External</option>
+                </select>
+            </form>
+        </div>
+    </header>
+
+    <nav>
+        <div id="personal_recs"></div>
+    </nav>
+    <section>{% block content %}{% endblock %}</section>
+    <footer>
+        By Fabian Senn
+    </footer>
 </body>
+<script>
+    function displayRecommendations(json_data) {
+        recommendations = json_data.results
+        console.log(recommendations.length + ' Recommendations');
+        if (recommendations.length > 0) {
+            $('#personal_recs').append(
+                'Recommended for you:' +
+                '<ul>'
+            );
+            console.log('Recommendations:');
+            for (i = 0; i < recommendations.length; i += 1) {
+                console.log(recommendations[i].identifier);
+                rec_content = '<li class="recommendation">' +
+                    '<a href="/show?record_id=' +
+                    recommendations[i].identifier + '">' +
+                    recommendations[i].title + '</a></li>';
+                $('#personal_recs').append(rec_content);
+            }
+            $('#personal_recs').append('</ul>')
+        }
+    }
+    function getRecommendations() {
+        $.ajax({
+            url: '/inspired_by_your_view_history', 
+            async: true,
+            dataType: 'json',
+            success: displayRecommendations,
+            error: function(data) {
+                console.log('Error while retrieving recommendations');
+            }
+        })
+    }
+</script>
