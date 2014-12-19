@@ -130,15 +130,16 @@ def get_recommendations(
     return promoted_results, recommendations
 
 
-def report_view(query_string, is_internal_record, session_id, record_id):
+def report_view(is_internal_record, session_id, record_id, query_string=None):
     payload = {
-        'query_string': query_string,
         'is_internal_record': is_internal_record,
         'record_id': record_id,
         'api_key': current_app.config['API_KEY'],
         'session_id': session_id,
         'timestamp': datetime.utcnow().isoformat()
     }
+    if query_string:
+        payload['query_string'] = query_string
     print(int(time()))
     print(payload)
     r = requests.get(
@@ -239,12 +240,13 @@ def show():
             print(sessions[session['session_id']])
             if query_id in sessions[session['session_id']]:
                 print('register hit')
-                report_view(query, True, session['session_id'], record_id)
+                report_view(True, session['session_id'], record_id, query)
 
                 return render_template(
                     'meta_search/show.html', query=query,
                     record=record)
         else:
+            report_view(True, session['session_id'], record_id)
             return render_template(
                 'meta_search/show.html', record=record)
 
@@ -257,6 +259,7 @@ def inspired_by_your_view_history():
         'session_id': session['session_id'],
         'api_key': current_app.config['API_KEY'],
         'include_internal_records': True,
+        'max_num_recs': 5,
     }
     r = requests.get(
         rec_sys_address + '/inspired_by_your_view_history',
@@ -265,6 +268,7 @@ def inspired_by_your_view_history():
     recommendations = []
     try:
         r_json = r.json()
+        print(r_json)
         recommended_records = []
         for json_rec in r_json['results']:
             recommended_records.append(json_rec['record_id'])

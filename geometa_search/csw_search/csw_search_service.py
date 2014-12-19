@@ -37,6 +37,7 @@ class CSWSearchService(SearchService):
         return search_results, num_matches
 
     def search_by_ids(self, record_ids):
+        print(record_ids)
         try:
             self.csw.getrecordbyid(
                 id=record_ids, esn='full')
@@ -48,8 +49,9 @@ class CSWSearchService(SearchService):
 
             return search_results
 
-        except ExceptionReport:
+        except ExceptionReport as e:
             print('Get Records by ids could not be evaluated')
+            print(e)
 
         return {}
 
