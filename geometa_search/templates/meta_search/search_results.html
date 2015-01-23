@@ -2,18 +2,18 @@
 {% extends "layout.html" %}
 {% block content %}
 <h2>Search results for "{{ query }}":</h2>
-    <ul>
-    {% for query in sim_queries %}
     <div>
-        <li>
-            <a href="{{ url_for('meta_search.search', q=query) }}">
-                "{{ query }} "
-            </a>
-        </li>
-    </div>
-    {% endfor %}
-    </ul>
+    Related queries: 
 
+    {% for query in sim_queries %}
+        {% if not loop.first %}
+            ,
+        {% endif %}
+            <a href="{{ url_for('meta_search.search', q=query) }}">
+                {{ query }}
+            </a>
+    {% endfor %}
+    </div>
     <ul>
     {% for result in results %}
     <div>

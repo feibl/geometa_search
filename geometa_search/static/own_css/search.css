@@ -25,7 +25,7 @@ footer, header, hgroup, menu, nav, section {
 }
 body {
     font-family:Arial,Verdana, Helvetica,sans-serif;
-    font-size:12px;
+    font-size:14px;
     line-height:15px;
 }
 .record-link {
@@ -35,6 +35,11 @@ ul
     list-style-type: none;
     margin-left: 0;
     padding-left: 0;
+}
+.recmmendation_list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
 }
 .record-snippet {
     font-size: 15px;
@@ -52,8 +57,8 @@ header {
 nav {
     line-height:30px;
     background-color:#eeeeee;
-    height:300px;
-    width:200px;
+    height:1000px;
+    width:300px;
     float:left;
     padding:5px;
 }

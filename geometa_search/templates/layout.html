@@ -1,11 +1,11 @@
 <head>
-    <title>Geodata Meta Search Engine</title>
+    <title>HSR-Geodatenkompass</title>
     <script type=text/javascript src="{{ url_for('static', filename='jquery.js') }}"></script>
 	<link rel="stylesheet" type='text/css' href="{{ url_for('static', filename='own_css/search.css') }}">
 </head>
 <body onload="getRecommendations()">
     <header>
-        <h1>Geometa Search</h1>
+        <h1>HSR-Geodatenkompass</h1>
         <div class="search_bar">
             <form style="display: inline;" action="{{ url_for('meta_search.search') }}" method="GET">
                 <input type="text" name="q" value="{{ query }}">
@@ -26,15 +26,12 @@
         By Fabian Senn
     </footer>
 </body>
-<script>
+<script type="text/javascript">
     function displayRecommendations(json_data) {
         recommendations = json_data.results
         console.log(recommendations.length + ' Recommendations');
         if (recommendations.length > 0) {
-            $('#personal_recs').append(
-                'Recommended for you:' +
-                '<ul>'
-            );
+            var recs = '<h3>Inspired by your History:</h3>' + '<ul>'
             console.log('Recommendations:');
             for (i = 0; i < recommendations.length; i += 1) {
                 console.log(recommendations[i].identifier);
@@ -42,9 +39,11 @@
                     '<a href="/show?record_id=' +
                     recommendations[i].identifier + '">' +
                     recommendations[i].title + '</a></li>';
-                $('#personal_recs').append(rec_content);
+                
+                recs += rec_content;
             }
-            $('#personal_recs').append('</ul>')
+            recs += '</ul>';
+            $('#personal_recs').append(recs);
         }
     }
     function getRecommendations() {

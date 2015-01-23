@@ -87,7 +87,7 @@ def get_recommendations(
         'api_key': current_app.config['API_KEY'],
     }
     r = requests.get(
-        rec_sys_address + '/viewed_results_for_query',
+        rec_sys_address + '/recommended_search_results',
         params=payload
     )
 
@@ -253,8 +253,8 @@ def show():
     abort(404)
 
 
-@meta_search.route('/inspired_by_your_view_history')
-def inspired_by_your_view_history():
+@meta_search.route('/other_users_also_used')
+def influenced_by_your_view_history():
     payload = {
         'session_id': session['session_id'],
         'api_key': current_app.config['API_KEY'],
@@ -262,7 +262,7 @@ def inspired_by_your_view_history():
         'max_num_recs': 5,
     }
     r = requests.get(
-        rec_sys_address + '/inspired_by_your_view_history',
+        rec_sys_address + '/other_users_also_used',
         params=payload
     )
     recommendations = []
@@ -274,11 +274,46 @@ def inspired_by_your_view_history():
             recommended_records.append(json_rec['record_id'])
 
         if len(recommended_records) > 0:
-            records = searcher.search_by_ids(recommended_records)
-
             for record_id in recommended_records:
-                if record_id in records:
-                    record = records[record_id]
+                record = searcher.search_by_id(record_id)
+                if record:
+                    recommendations.append({
+                        'identifier': record.identifier,
+                        'title': record.title,
+                    })
+        else:
+            print('No recommendations'.format())
+
+    except ValueError:
+        print('No JSON object could be decoded')
+
+    return jsonify(results=recommendations)
+
+
+@meta_search.route('/influences_by_your_view_history')
+def influenced_by_your_view_history():
+    payload = {
+        'session_id': session['session_id'],
+        'api_key': current_app.config['API_KEY'],
+        'include_internal_records': True,
+        'max_num_recs': 5,
+    }
+    r = requests.get(
+        rec_sys_address + '/influenced_by_your_history',
+        params=payload
+    )
+    recommendations = []
+    try:
+        r_json = r.json()
+        print(r_json)
+        recommended_records = []
+        for json_rec in r_json['results']:
+            recommended_records.append(json_rec['record_id'])
+
+        if len(recommended_records) > 0:
+            for record_id in recommended_records:
+                record = searcher.search_by_id(record_id)
+                if record:
                     recommendations.append({
                         'identifier': record.identifier,
                         'title': record.title,
