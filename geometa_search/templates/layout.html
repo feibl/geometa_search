@@ -31,7 +31,7 @@
         recommendations = json_data.results
         console.log(recommendations.length + ' Recommendations');
         if (recommendations.length > 0) {
-            var recs = '<h3>Inspired by your History:</h3>' + '<ul>'
+            var recs = '<h3>Influenced by your History:</h3>' + '<ul>'
             console.log('Recommendations:');
             for (i = 0; i < recommendations.length; i += 1) {
                 console.log(recommendations[i].identifier);
@@ -48,7 +48,7 @@
     }
     function getRecommendations() {
         $.ajax({
-            url: '/inspired_by_your_view_history', 
+            url: '/influenced_by_your_history', 
             async: true,
             dataType: 'json',
             success: displayRecommendations,

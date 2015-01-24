@@ -1,4 +1,5 @@
-from ..services import searcher
+from .services import searcher
+from core import InvalidUsage
 
 from flask import Blueprint
 from flask import render_template
@@ -10,6 +11,7 @@ from flask import jsonify
 
 import requests
 
+from math import ceil
 import uuid
 import M2Crypto
 from time import time
@@ -17,14 +19,74 @@ from datetime import datetime
 
 from collections import OrderedDict
 
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 meta_search = Blueprint('meta_search', __name__)
 
 
 rec_sys_address = 'http://localhost:5000/recommender/api'
+RESULTS_PER_PAGE = 10
 
 
-sessions = {}
+class Pagination(object):
+
+    def __init__(self, page, per_page, total_count):
+        self.page = page
+        self.per_page = per_page
+        self.total_count = total_count
+
+    @property
+    def pages(self):
+        return int(ceil(self.total_count / float(self.per_page)))
+
+    @property
+    def has_prev(self):
+        return self.page > 1
+
+    @property
+    def has_next(self):
+        return self.page < self.pages
+
+    def iter_pages(self, left_edge=2, left_current=2,
+                   right_current=5, right_edge=2):
+        last = 0
+        for num in xrange(1, self.pages + 1):
+            if num <= left_edge or \
+                    (
+                        num > self.page - left_current - 1 and
+                        num < self.page + right_current
+                    ) or \
+                    num > self.pages - right_edge:
+                if last + 1 != num:
+                    yield None
+                yield num
+                last = num
+
+
+def parse_arg(
+        request, arg_name, default_value=None, type=None, required=False):
+    try:
+        arg = request.args[arg_name]
+        if type is not None:
+            arg = type(arg)
+    except KeyError:
+        if required:
+            raise InvalidUsage(
+                u'Missing required parameter {}'.format(arg_name),
+                status_code=400)
+        arg = default_value
+    except ValueError:
+        if required:
+            raise InvalidUsage(
+                u'Parameter {} could not be parsed'.format(arg_name),
+                status_code=400)
+        arg = default_value
+
+    return arg
 
 
 class SearchResult(object):
@@ -62,21 +124,11 @@ def create_session_id():
     return uuid.UUID(bytes=M2Crypto.m2.rand_bytes(16))
 
 
-@meta_search.before_request
-def before_request():
-    if 'session_id' not in session:
-        session_id = create_session_id()
-        session['session_id'] = session_id
-        sessions[session_id] = set()
-    elif session['session_id'] not in sessions:
-        sessions[session['session_id']] = set()
-
-
 def generate_query_id(query):
     return str(hash('{}{}{}'.format('salt', query, str(int(time())))))
 
 
-def get_recommendations(
+def get_search_recommendations(
         query_string, include_internal_records, num_promotions=3):
     promoted_results = []
     recommendations = OrderedDict()
@@ -171,6 +223,13 @@ def get_similar_queries(query_string, max_results=3):
     return sim_queries[:max_results]
 
 
+@meta_search.before_request
+def before_request():
+    if 'session_id' not in session:
+        session_id = create_session_id()
+        session['session_id'] = session_id
+
+
 @meta_search.route('/')
 def index():
     '''
@@ -185,36 +244,45 @@ def search():
     Returns search-results from records matching a
     search-text to the client
     '''
-    query = request.args['q']
-    internal_session = request.args['internal']
+    query = parse_arg(request, 'q', required=True)
+    page = parse_arg(
+        request, 'page', required=False, type=int, default_value=1)
 
-    if query and internal_session:
-        sim_queries = get_similar_queries(query)
-        promotions, remaining_recs = get_recommendations(
-            query, internal_session)
+    logging.info('Search Request received. Query: %s', query)
 
-        query_id = generate_query_id(query)
-        sessions[session['session_id']].update([query_id])
-        print(sessions[session['session_id']])
+    sim_queries = get_similar_queries(query)
 
-        records, num_matches = searcher.search_by_keywords(query)
+    records, num_matches = searcher.search_by_keywords(
+        query, (page - 1) * RESULTS_PER_PAGE, RESULTS_PER_PAGE)
 
-        results = promotions
+    results = [create_search_result(record) for record in records]
+
+    # Add recommended search result if on first page
+    if not page or page == 1:
+        promotions, remaining_recs = get_search_recommendations(
+            query, True)
+
+        # Delete search results from normal search list if promoted
         promoted_ids = [p.identifier for p in promotions]
-        for record in records:
-            if record.identifier in promoted_ids:
-                continue
-            search_result = create_search_result(record)
-            if record.identifier in remaining_recs:
-                search_result.recommendation =\
-                    remaining_recs[record.identifier]
-            results.append(search_result)
 
-        return render_template(
-            'meta_search/search_results.html', query=query,
-            query_id=query_id, results=results,
-            sim_queries=sim_queries,
-            num_matches=num_matches)
+        merged_results = promotions
+
+        for i, result in enumerate(results):
+            if result.identifier in promoted_ids:
+                continue
+            if result.identifier in remaining_recs:
+                result.recommendation = remaining_recs[result.identifier]
+            merged_results.append(result)
+
+        results = merged_results
+
+    return render_template(
+        'meta_search/search_results.html',
+        query=query,
+        results=results,
+        sim_queries=sim_queries,
+        num_matches=num_matches,
+        pagination=Pagination(page, RESULTS_PER_PAGE, num_matches))
 
     return render_template('layout.html')
 
@@ -224,37 +292,31 @@ def show():
     '''
     Shows the metadata with the given id
     '''
-    record_id = request.args.get('record_id')
-    query = request.args.get('q')
-    query_id = request.args.get('qid')
-    print('Query Id: {}'.format(query_id))
-    print('Query: {}'.format(query))
+    query = parse_arg(request, 'q', required=False)
+    record_id = parse_arg(request, 'record_id', required=True)
 
-    if record_id:
-        record = searcher.search_by_id(record_id)
+    logger.info(
+        'Show request received. Record: %s, Query: %s', record_id, query)
 
-        if record is None:
-            abort(404)
+    record = searcher.search_by_id(record_id)
 
-        if query is not None and query_id is not None:
-            print(sessions[session['session_id']])
-            if query_id in sessions[session['session_id']]:
-                print('register hit')
-                report_view(True, session['session_id'], record_id, query)
+    if record is None:
+        abort(404)
 
-                return render_template(
-                    'meta_search/show.html', query=query,
-                    record=record)
-        else:
-            report_view(True, session['session_id'], record_id)
-            return render_template(
-                'meta_search/show.html', record=record)
-
-    abort(404)
+    # Report a view request
+    if query is not None:
+        report_view(True, session['session_id'], record_id, query)
+        return render_template(
+            'meta_search/show.html', query=query,
+            record=record)
+    else:
+        report_view(True, session['session_id'], record_id)
+        return render_template(
+            'meta_search/show.html', record=record)
 
 
 @meta_search.route('/other_users_also_used')
-def influenced_by_your_view_history():
+def other_users_also_used():
     payload = {
         'session_id': session['session_id'],
         'api_key': current_app.config['API_KEY'],
@@ -290,8 +352,8 @@ def influenced_by_your_view_history():
     return jsonify(results=recommendations)
 
 
-@meta_search.route('/influences_by_your_view_history')
-def influenced_by_your_view_history():
+@meta_search.route('/influenced_by_your_history')
+def influenced_by_your_history():
     payload = {
         'session_id': session['session_id'],
         'api_key': current_app.config['API_KEY'],
@@ -325,3 +387,13 @@ def influenced_by_your_view_history():
         print('No JSON object could be decoded')
 
     return jsonify(results=recommendations)
+
+
+@meta_search.errorhandler(InvalidUsage)
+def handle_invalid_usage(error):
+    abort(404)
+
+
+@meta_search.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404

@@ -1,5 +1,26 @@
 <!-- extend base layout -->
 {% extends "layout.html" %}
+
+{% macro render_pagination(pagination, endpoint, query) %}
+  <div class=pagination>
+  {%- for page in pagination.iter_pages() %}
+    {% if page %}
+      {% if page != pagination.page %}
+        <a href="{{ url_for(endpoint, page=page, q=query) }}">{{ page }}</a>
+      {% else %}
+        <strong>{{ page }}</strong>
+      {% endif %}
+    {% else %}
+      <span class=ellipsis>…</span>
+    {% endif %}
+  {%- endfor %}
+  {% if pagination.has_next %}
+    <a href="{{ url_for(endpoint, page=pagination.page + 1, q=query)
+      }}">Next &raquo;</a>
+  {% endif %}
+  </div>
+{% endmacro %}
+
 {% block content %}
 <h2>Search results for "{{ query }}":</h2>
     <div>
@@ -15,6 +36,7 @@
     {% endfor %}
     </div>
     <ul>
+
     {% for result in results %}
     <div>
         <li>
@@ -42,6 +64,10 @@
   {% else %}
     <li><em>Unbelievable. Nothing found</em>
   {% endfor %}
+  {{ render_pagination(pagination, 'meta_search.search', query) }}
   </ul>
-  <script type="text/javascript" src="/static/own_js/layout.js"></script>
+
+
+<script type="text/javascript" src="/static/own_js/layout.js"></script>
+
 {% endblock %}
