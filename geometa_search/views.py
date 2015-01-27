@@ -248,7 +248,7 @@ def search():
     page = parse_arg(
         request, 'page', required=False, type=int, default_value=1)
 
-    logging.info('Search Request received. Query: %s', query)
+    current_app.logger.info('Search Request received. Query: %s', query)
 
     sim_queries = get_similar_queries(query)
 
@@ -317,6 +317,44 @@ def show():
 
 @meta_search.route('/other_users_also_used')
 def other_users_also_used():
+    record_id = parse_arg(request, 'record_id', required=True)
+    payload = {
+        'record_id': record_id,
+        'api_key': current_app.config['API_KEY'],
+        'include_internal_records': True,
+        'max_num_recs': 5,
+    }
+    r = requests.get(
+        get_recsys_address() + '/other_users_also_used',
+        params=payload
+    )
+    recommendations = []
+    try:
+        r_json = r.json()
+        print(r_json)
+        recommended_records = []
+        for json_rec in r_json['results']:
+            recommended_records.append(json_rec['record_id'])
+
+        if len(recommended_records) > 0:
+            for record_id in recommended_records:
+                record = searcher.search_by_id(record_id)
+                if record:
+                    recommendations.append({
+                        'identifier': record.identifier,
+                        'title': record.title,
+                    })
+        else:
+            print('No recommendations'.format())
+
+    except ValueError:
+        print('No JSON object could be decoded')
+
+    return jsonify(results=recommendations)
+
+
+@meta_search.route('/influenced_by_your_history')
+def influenced_by_your_history():
     payload = {
         'session_id': session['session_id'],
         'api_key': current_app.config['API_KEY'],
@@ -324,7 +362,7 @@ def other_users_also_used():
         'max_num_recs': 5,
     }
     r = requests.get(
-        get_recsys_address() + '/other_users_also_used',
+        get_recsys_address() + '/influenced_by_your_history',
         params=payload
     )
     recommendations = []
@@ -374,43 +412,6 @@ def refresh():
         params=payload
     )
     return jsonify({'succes': True})
-
-
-@meta_search.route('/influenced_by_your_history')
-def influenced_by_your_history():
-    payload = {
-        'session_id': session['session_id'],
-        'api_key': current_app.config['API_KEY'],
-        'include_internal_records': True,
-        'max_num_recs': 5,
-    }
-    r = requests.get(
-        get_recsys_address() + '/influenced_by_your_history',
-        params=payload
-    )
-    recommendations = []
-    try:
-        r_json = r.json()
-        print(r_json)
-        recommended_records = []
-        for json_rec in r_json['results']:
-            recommended_records.append(json_rec['record_id'])
-
-        if len(recommended_records) > 0:
-            for record_id in recommended_records:
-                record = searcher.search_by_id(record_id)
-                if record:
-                    recommendations.append({
-                        'identifier': record.identifier,
-                        'title': record.title,
-                    })
-        else:
-            print('No recommendations'.format())
-
-    except ValueError:
-        print('No JSON object could be decoded')
-
-    return jsonify(results=recommendations)
 
 
 @meta_search.errorhandler(InvalidUsage)

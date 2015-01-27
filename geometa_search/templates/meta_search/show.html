@@ -3,7 +3,12 @@
 {% block content %}
     <div>
     <h3>{{record.title}}</h3>
-    <p>Identifier: {{ record.record_id }}</p>
+    <meta id="record_data" data-record_id="{{record.identifier}}"></meta>
+    <p>Identifier: {{ record.identifier }}</p>
     <p>Description: {{ record.abstract }}</p>
     </div>
+    <div id="other_users_viewed"></div>
+    <script type="text/javascript">
+        getOtherUsersRecommendations();
+    </script>
 {% endblock %}
