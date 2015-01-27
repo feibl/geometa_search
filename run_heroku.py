@@ -13,6 +13,7 @@ app = DispatcherMiddleware(
         '/recommender': backend
     }
 )
+print('app created')
 
 if __name__ == '__main__':
     run_simple(
