@@ -9,6 +9,13 @@ class Config(object):
     TESTING = False
     SECRET_KEY = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
     API_KEY = 'a18cccd4ff6cd3a54a73529e2145fd36'
+    SERVER_NAME = 'localhost:5000'
+
+
+class HerokuConfig(Config):
+    DEBUG = True
+    TESTING = True
+    SERVER_NAME = 'lit-retreat-7902.herokuapp.com'
 
 
 class ProductionConfig(Config):

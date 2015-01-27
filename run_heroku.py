@@ -7,7 +7,7 @@ from werkzeug.serving import run_simple
 
 backend = create_backend('recsys_config.HerokuConfig')
 create_recommender_system(backend)
-frontend = create_frontend('config.DevelopmentConfig')
+frontend = create_frontend('config.HerokuConfig')
 app = DispatcherMiddleware(
     frontend, {
         '/recommender': backend

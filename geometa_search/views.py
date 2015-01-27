@@ -27,8 +27,11 @@ logger = logging.getLogger(__name__)
 meta_search = Blueprint('meta_search', __name__)
 
 
-rec_sys_address = 'http://localhost:5000/recommender/api'
 RESULTS_PER_PAGE = 10
+
+
+def get_recsys_address():
+    return 'http://' + current_app.config['SERVER_NAME'] + '/recommender/api'
 
 
 class Pagination(object):
@@ -138,7 +141,7 @@ def get_search_recommendations(
         'api_key': current_app.config['API_KEY'],
     }
     r = requests.get(
-        rec_sys_address + '/recommended_search_results',
+        get_recsys_address() + '/recommended_search_results',
         params=payload
     )
 
@@ -192,7 +195,7 @@ def report_view(is_internal_record, session_id, record_id, query_string=None):
     if query_string:
         payload['query_string'] = query_string
     requests.get(
-        rec_sys_address + '/view',
+        get_recsys_address() + '/view',
         params=payload
     )
 
@@ -204,7 +207,7 @@ def get_similar_queries(query_string, max_results=3):
     }
     print(payload)
     r = requests.get(
-        rec_sys_address + '/similar_queries',
+        get_recsys_address() + '/similar_queries',
         params=payload
     )
     print(r.text)
@@ -321,7 +324,7 @@ def other_users_also_used():
         'max_num_recs': 5,
     }
     r = requests.get(
-        rec_sys_address + '/other_users_also_used',
+        get_recsys_address() + '/other_users_also_used',
         params=payload
     )
     recommendations = []
@@ -370,7 +373,7 @@ def influenced_by_your_history():
         'max_num_recs': 5,
     }
     r = requests.get(
-        rec_sys_address + '/influenced_by_your_history',
+        get_recsys_address() + '/influenced_by_your_history',
         params=payload
     )
     recommendations = []
