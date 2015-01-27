@@ -3,6 +3,7 @@
 faulty_metadata.log
 error.log
 venv/
+celerybeat-schedule
 
 #vim swap files
 *.swp
