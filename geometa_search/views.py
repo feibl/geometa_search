@@ -13,7 +13,6 @@ import requests
 
 from math import ceil
 import uuid
-import M2Crypto
 from time import time
 from datetime import datetime
 
@@ -121,7 +120,7 @@ def create_search_result(record):
 
 
 def create_session_id():
-    return uuid.UUID(bytes=M2Crypto.m2.rand_bytes(16))
+    return uuid.uuid4()
 
 
 def generate_query_id(query):
