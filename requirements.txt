@@ -13,7 +13,7 @@ MarkupSafe==0.23
 OWSLib==0.8.10
 SQLAlchemy==0.9.4
 SQLAlchemy-Utils==0.26.5
--e git+git@github.com:feibl/search-rex.git@a631b0f7231742144bb154afaa156deb6b0aa36d#egg=Search_Recommender-origin
+-e git://github.com/feibl/search-rex.git@a631b0f7231742144bb154afaa156deb6b0aa36d#egg=Search_Recommender-origin
 WTForms==1.0.5
 Werkzeug==0.9.6
 alembic==0.6.5
