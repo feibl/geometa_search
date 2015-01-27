@@ -192,13 +192,10 @@ def report_view(is_internal_record, session_id, record_id, query_string=None):
     }
     if query_string:
         payload['query_string'] = query_string
-    print(int(time()))
-    print(payload)
-    r = requests.get(
+    requests.get(
         rec_sys_address + '/view',
         params=payload
     )
-    print(r.text)
 
 
 def get_similar_queries(query_string, max_results=3):
@@ -228,6 +225,7 @@ def before_request():
     if 'session_id' not in session:
         session_id = create_session_id()
         session['session_id'] = session_id
+        logger.info('New session created: %s', session_id)
 
 
 @meta_search.route('/')
@@ -350,6 +348,18 @@ def other_users_also_used():
         print('No JSON object could be decoded')
 
     return jsonify(results=recommendations)
+
+
+@meta_search.route('/create_new_session')
+def create_new_session():
+    print('New Session ID')
+    logger.info('New session id requested')
+    session_id = create_session_id()
+    session['session_id'] = session_id
+
+    logger.info('New session created: %s', session_id)
+
+    return render_template('layout.html')
 
 
 @meta_search.route('/influenced_by_your_history')
