@@ -22,6 +22,9 @@
                 <input type="submit" id="btn_new_session" value="Start New Session">
             </form>
         </div>
+        <div class="session_bar">
+            <input type="button" onclick="refreshRecommender()" id="btn_refresh" value="Refresh Recommender">
+        </div>
     </header>
 
     <nav>
@@ -62,6 +65,10 @@
                 console.log('Error while retrieving recommendations');
             }
         })
+    }
+    function refreshRecommender() {
+        $.get( "/refresh");
+        alert( "Successfully Refreshed." );
     }
 
 </script>

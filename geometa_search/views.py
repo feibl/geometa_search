@@ -364,6 +364,18 @@ def create_new_session():
     return render_template('layout.html')
 
 
+@meta_search.route('/refresh')
+def refresh():
+    payload = {
+        'api_key': current_app.config['API_KEY'],
+    }
+    requests.get(
+        get_recsys_address() + '/refresh',
+        params=payload
+    )
+    return jsonify({'succes': True})
+
+
 @meta_search.route('/influenced_by_your_history')
 def influenced_by_your_history():
     payload = {
