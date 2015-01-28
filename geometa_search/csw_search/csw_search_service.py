@@ -1,7 +1,7 @@
 from ..search_service import SearchService
 from ..search_service import Record
 
-from owslib.fes import PropertyIsEqualTo
+from owslib.fes import PropertyIsLike
 from owslib.ows import ExceptionReport
 
 
@@ -15,7 +15,7 @@ class CSWSearchService(SearchService):
 
     def search_by_keywords(
             self, query_string, start_position=0, max_records=10):
-        query = PropertyIsEqualTo('csw:AnyText', query_string)
+        query = PropertyIsLike('csw:AnyText', query_string)
 
         self.csw.getrecords2(
             constraints=[query],

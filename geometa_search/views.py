@@ -337,13 +337,12 @@ def other_users_also_used():
             recommended_records.append(json_rec['record_id'])
 
         if len(recommended_records) > 0:
-            for record_id in recommended_records:
-                record = searcher.search_by_id(record_id)
-                if record:
-                    recommendations.append({
-                        'identifier': record.identifier,
-                        'title': record.title,
-                    })
+            records = searcher.search_by_ids(recommended_records)
+            for record_id, record in records.iteritems():
+                recommendations.append({
+                    'identifier': record.identifier,
+                    'title': record.title,
+                })
         else:
             print('No recommendations'.format())
 
@@ -374,13 +373,12 @@ def influenced_by_your_history():
             recommended_records.append(json_rec['record_id'])
 
         if len(recommended_records) > 0:
-            for record_id in recommended_records:
-                record = searcher.search_by_id(record_id)
-                if record:
-                    recommendations.append({
-                        'identifier': record.identifier,
-                        'title': record.title,
-                    })
+            records = searcher.search_by_ids(recommended_records)
+            for record_id, record in records.iteritems():
+                recommendations.append({
+                    'identifier': record.identifier,
+                    'title': record.title,
+                })
         else:
             print('No recommendations'.format())
 
