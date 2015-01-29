@@ -97,7 +97,11 @@ class SearchResult(object):
         self.identifier = record_id
         self.title = title
         self.abstract = abstract
-        self.snippet = abstract[:100]
+        SNIPPET_LENGTH = 120
+
+        end_index = abstract.find(' ', SNIPPET_LENGTH)
+        self.snippet = abstract[:end_index] + ' ...'\
+            if end_index != -1 else abstract[:SNIPPET_LENGTH]
         self.recommendation = None
 
     def is_recommended(self):
@@ -235,7 +239,7 @@ def index():
     '''
     Start page with search form
     '''
-    return render_template('layout.html')
+    return render_template('meta_search/welcome.html')
 
 
 @meta_search.route('/search')
@@ -338,11 +342,13 @@ def other_users_also_used():
 
         if len(recommended_records) > 0:
             records = searcher.search_by_ids(recommended_records)
-            for record_id, record in records.iteritems():
-                recommendations.append({
-                    'identifier': record.identifier,
-                    'title': record.title,
-                })
+            for record_id in recommended_records:
+                if record_id in records:
+                    record = records[record_id]
+                    recommendations.append({
+                        'identifier': record.identifier,
+                        'title': record.title,
+                    })
         else:
             print('No recommendations'.format())
 
@@ -374,11 +380,13 @@ def influenced_by_your_history():
 
         if len(recommended_records) > 0:
             records = searcher.search_by_ids(recommended_records)
-            for record_id, record in records.iteritems():
-                recommendations.append({
-                    'identifier': record.identifier,
-                    'title': record.title,
-                })
+            for record_id in recommended_records:
+                if record_id in records:
+                    record = records[record_id]
+                    recommendations.append({
+                        'identifier': record.identifier,
+                        'title': record.title,
+                    })
         else:
             print('No recommendations'.format())
 
@@ -397,7 +405,7 @@ def create_new_session():
 
     logger.info('New session created: %s', session_id)
 
-    return render_template('layout.html')
+    return render_template('meta_search/welcome.html')
 
 
 @meta_search.route('/refresh')

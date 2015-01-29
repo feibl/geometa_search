@@ -22,9 +22,12 @@
 {% endmacro %}
 
 {% block content %}
-<h2>Search results for "{{ query }}":</h2>
-    <div>
-    Related queries: 
+<h2>Search results for query "{{ query }}":</h2>
+<h4>Number of matches: {{ num_matches }}</h4>
+    <div class="sim_queries">
+    {% if sim_queries %}
+        Related queries: 
+    {% endif %}
 
     {% for query in sim_queries %}
         {% if not loop.first %}
@@ -35,10 +38,10 @@
             </a>
     {% endfor %}
     </div>
-    <ul>
-
+    
+    <ul class="search_results">
     {% for result in results %}
-    <div>
+    <div class "search_result">
         <li>
             <div>
                 <a class="record-link" id="link_{{result.identifier}}"
@@ -58,7 +61,7 @@
                     width="15" height="15"/>
                 {% endif %}
             </div>
-            <p>{{ result.snippet }}</p>
+            <p class="result_snippet">{{ result.snippet }}</p>
         </li>
     </div>
   {% else %}

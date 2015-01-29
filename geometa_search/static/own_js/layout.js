@@ -8,8 +8,9 @@ $('a').each(function(){
 function displayRecommendations(json_data) {
     recommendations = json_data.results
     console.log(recommendations.length + ' Recommendations');
+    var recs = '<h3>Influenced by your History:</h3>' + '<ul>';
     if (recommendations.length > 0) {
-        var recs = '<h3>Influenced by your History:</h3>' + '<ul>'
+        recs += '<ul class="recommendation_list">';
         console.log('Recommendations:');
         for (i = 0; i < recommendations.length; i += 1) {
             console.log(recommendations[i].identifier);
@@ -21,8 +22,11 @@ function displayRecommendations(json_data) {
             recs += rec_content;
         }
         recs += '</ul>';
-        $('#personal_recs').append(recs);
     }
+    else {
+        recs += '<p>At this point, we do not have any recommendations for you</p>';
+    }
+    $('#personal_recs').append(recs);
 }
 function getRecommendations() {
     $.ajax({
