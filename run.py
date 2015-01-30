@@ -5,7 +5,7 @@ from werkzeug.wsgi import DispatcherMiddleware
 from werkzeug.serving import run_simple
 
 
-backend = create_backend('recsys_config.DevelopmentConfig')
+backend = create_backend('config.DevelopmentConfig')
 create_recommender_system(backend)
 frontend = create_frontend('config.DevelopmentConfig')
 app = DispatcherMiddleware(

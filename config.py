@@ -10,6 +10,9 @@ class Config(object):
     SECRET_KEY = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
     API_KEY = 'a18cccd4ff6cd3a54a73529e2145fd36'
     SERVER_NAME = 'localhost:5000'
+    SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']\
+        if 'DATABASE_URL' in os.environ else\
+        'postgresql://postgres:postgres@localhost/search_rex'
     CELERY_BROKER_URL = 'sqla+' + os.environ['DATABASE_URL']\
         if 'DATABASE_URL' in os.environ else\
         'sqla+postgresql://postgres:postgres@localhost/search_rex'
