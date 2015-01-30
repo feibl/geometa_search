@@ -1,4 +1,4 @@
-search-rex
+geometa_search
 ==========
 
 # Description
